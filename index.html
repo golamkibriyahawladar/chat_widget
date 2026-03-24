@@ -233,25 +233,27 @@
         }
 
         // ২. পপআপ চেক করার ফাংশন (Polling)
-        async function checkTrigger() {
-            try {
-                const res = await fetch(TRIGGER_CHECK_URL);
-                if (res.status === 200) {
-                    const data = await res.json();
-                    if (data && data.question) {
-                        // ডাটা সেভ করা যাতে exam.html পায়
-                        localStorage.setItem('current_exam_data', JSON.stringify(data));
-                        // পপআপ দেখানো
-                        document.getElementById('popupText').innerText = `Topic: ${data.topic}`;
-                        document.getElementById('examPopup').classList.add('show');
-                    }
-                }
-            } catch (e) { /* silent check */ }
+        // ১. ব্রডকাস্ট চ্যানেল তৈরি (নাম: exam_channel)
+        const bc = new BroadcastChannel('exam_channel');
+
+        // ২. যখন অন্য ট্যাব (Exam Page) থেকে মেসেজ আসবে
+        bc.onmessage = (event) => {
+            if (event.data.type === 'SHOW_POPUP') {
+                const data = event.data.payload;
+
+                // পপআপে ডাটা সেট করা
+                document.getElementById('popupText').innerText = `Topic: ${data.topic}`;
+
+                // পপআপ দেখানো
+                document.getElementById('examPopup').classList.add('show');
+            }
+        };
+
+        function goToExam() {
+            // পপআপ বন্ধ করে সরাসরি খোলা থাকা এক্সাম ট্যাবে ফোকাস করবে
+            document.getElementById('examPopup').classList.remove('show');
+            alert("Please check your exam tab!");
         }
-
-        // প্রতি ৫ সেকেন্ড পর পর n8n কে জিজ্ঞেস করবে "নতুন প্রশ্ন আছে কি না"
-        setInterval(checkTrigger, 5000);
-
         function goToExam() {
             window.open('exam.html', '_blank');
             document.getElementById('examPopup').classList.remove('show');
