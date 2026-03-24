@@ -61,6 +61,8 @@
             padding: 10px 15px;
             border-radius: 15px;
             font-size: 14px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
         }
 
         .message.user .message-content {
@@ -99,7 +101,6 @@
             cursor: pointer;
         }
 
-        /* Popup Styles */
         .modal-overlay {
             display: none;
             position: fixed;
@@ -137,7 +138,6 @@
             font-weight: bold;
         }
 
-        /* Typing Effect CSS */
         .typing {
             font-size: 12px;
             color: #888;
@@ -154,8 +154,10 @@
         <div class="chat-header">
             <h3>Physio Assistant</h3>
         </div>
+
         <div class="messages-container" id="chatBox"></div>
         <div id="typing" class="typing">AI is typing...</div>
+
         <div class="input-area">
             <input type="text" id="userInput" placeholder="Type here...">
             <button id="sendBtn">Send</button>
@@ -176,11 +178,46 @@
         const sendBtn = document.getElementById('sendBtn');
         const typing = document.getElementById('typing');
 
-        // n8n URLs (আপনার n8n Webhook URL এখানে বসান)
         const CHAT_WEBHOOK = 'https://n8n2.srv980217.hstgr.cloud/webhook/physio_chatbot';
+        const CHECK_TRIGGER_URL = '/api/webhook/check-trigger';
 
+        let lastQuestionId = localStorage.getItem('last_question_id') || '';
 
-        // ১. মেসেজ পাঠানোর ফাংশন (টাইপিং ইফেক্ট সহ)
+        function addMessage(text, sender) {
+            const div = document.createElement('div');
+            div.className = `message ${sender}`;
+
+            const content = document.createElement('div');
+            content.className = 'message-content';
+            content.textContent = text;
+
+            div.appendChild(content);
+            chatBox.appendChild(div);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        function typeWriter(text, sender) {
+            const div = document.createElement('div');
+            div.className = `message ${sender}`;
+
+            const content = document.createElement('div');
+            content.className = 'message-content';
+
+            div.appendChild(content);
+            chatBox.appendChild(div);
+
+            let i = 0;
+            function type() {
+                if (i < text.length) {
+                    content.textContent += text.charAt(i);
+                    i++;
+                    chatBox.scrollTop = chatBox.scrollHeight;
+                    setTimeout(type, 20);
+                }
+            }
+            type();
+        }
+
         async function sendMessage() {
             const text = userInput.value.trim();
             if (!text) return;
@@ -195,72 +232,61 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ message: text })
                 });
+
                 const data = await res.json();
                 typing.style.display = 'none';
-                typeWriter(data.output || data.message, 'bot');
+
+                const reply = data.output || data.message || 'No response from server.';
+                typeWriter(reply, 'bot');
+
             } catch (e) {
                 typing.style.display = 'none';
-                addMessage("Error connecting to server.", 'bot');
+                addMessage('Error connecting to server.', 'bot');
+                console.error(e);
             }
         }
 
-        function addMessage(text, sender) {
-            const div = document.createElement('div');
-            div.className = `message ${sender}`;
-            div.innerHTML = `<div class="message-content">${text}</div>`;
-            chatBox.appendChild(div);
-            chatBox.scrollTop = chatBox.scrollHeight;
-        }
+        async function checkForExamTrigger() {
+            try {
+                const res = await fetch(CHECK_TRIGGER_URL, { cache: 'no-store' });
+                const data = await res.json();
 
-        function typeWriter(text, sender) {
-            const div = document.createElement('div');
-            div.className = `message ${sender}`;
-            const content = document.createElement('div');
-            content.className = 'message-content';
-            div.appendChild(content);
-            chatBox.appendChild(div);
+                if (!data.hasNew) return;
 
-            let i = 0;
-            function type() {
-                if (i < text.length) {
-                    content.innerHTML += text.charAt(i);
-                    i++;
-                    chatBox.scrollTop = chatBox.scrollHeight;
-                    setTimeout(type, 30);
-                }
-            }
-            type();
-        }
+                if (String(data.id) === String(lastQuestionId)) return;
 
-        // ২. পপআপ চেক করার ফাংশন (Polling)
-        // ১. ব্রডকাস্ট চ্যানেল তৈরি (নাম: exam_channel)
-        const bc = new BroadcastChannel('exam_channel');
+                const examData = {
+                    topic: data.topic || 'General Topic',
+                    passage: data.data?.passage || '',
+                    question: data.data?.question || '',
+                    options: data.data?.options || [],
+                    correctAnswer: data.data?.correctAnswer ?? 0,
+                    timeLimit: data.data?.timeLimit ?? 600
+                };
 
-        // ২. যখন অন্য ট্যাব (Exam Page) থেকে মেসেজ আসবে
-        bc.onmessage = (event) => {
-            if (event.data.type === 'SHOW_POPUP') {
-                const data = event.data.payload;
+                localStorage.setItem('current_exam_data', JSON.stringify(examData));
+                localStorage.setItem('last_question_id', String(data.id));
+                lastQuestionId = String(data.id);
 
-                // পপআপে ডাটা সেট করা
-                document.getElementById('popupText').innerText = `Topic: ${data.topic}`;
-
-                // পপআপ দেখানো
+                document.getElementById('popupText').innerText = `Topic: ${examData.topic}`;
                 document.getElementById('examPopup').classList.add('show');
+            } catch (err) {
+                console.error('Polling failed:', err);
             }
-        };
+        }
 
         function goToExam() {
-            // পপআপ বন্ধ করে সরাসরি খোলা থাকা এক্সাম ট্যাবে ফোকাস করবে
             document.getElementById('examPopup').classList.remove('show');
-            alert("Please check your exam tab!");
-        }
-        function goToExam() {
             window.open('exam.html', '_blank');
-            document.getElementById('examPopup').classList.remove('show');
         }
 
         sendBtn.onclick = sendMessage;
-        userInput.onkeypress = (e) => { if (e.key === 'Enter') sendMessage(); };
+        userInput.addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') sendMessage();
+        });
+
+        setInterval(checkForExamTrigger, 3000);
+        checkForExamTrigger();
     </script>
 </body>
 

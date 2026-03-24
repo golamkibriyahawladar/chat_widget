@@ -2,11 +2,10 @@
   "name": "physio-chat-exam-system",
   "version": "1.0.0",
   "description": "Physio Chat Bot with MCQ Examination System",
-  "main": "webhook-handler.js",
+  "main": "netlify/functions/api.js",
   "scripts": {
-    "start": "node webhook-handler.js",
-    "dev": "nodemon webhook-handler.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "netlify dev",
+    "test": "echo \"No test specified\""
   },
   "keywords": [
     "physio",
@@ -18,7 +17,6 @@
   "author": "Your Name",
   "license": "MIT",
   "dependencies": {
-    "body-parser": "^1.20.2",
     "cors": "^2.8.5",
     "express": "^4.18.2",
     "serverless-http": "^4.0.0"
@@ -28,13 +26,5 @@
   },
   "engines": {
     "node": ">=14.0.0"
-  },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/yourusername/physio-chat-exam.git"
-  },
-  "bugs": {
-    "url": "https://github.com/yourusername/physio-chat-exam/issues"
-  },
-  "homepage": "https://github.com/yourusername/physio-chat-exam#readme"
+  }
 }
