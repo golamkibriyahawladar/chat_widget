@@ -5,7 +5,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Physio Chat Bot</title>
-    <script src="https://js.pusher.com/8.2.0/pusher.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -14,48 +13,43 @@
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f0f2f5;
             height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 20px;
         }
 
         .chat-container {
             width: 100%;
-            max-width: 500px;
-            height: 600px;
-            background: #fff;
-            border-radius: 12px;
-            box-shadow: 0 5px 40px rgba(0, 0, 0, 0.2);
+            max-width: 450px;
+            height: 80vh;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
             display: flex;
             flex-direction: column;
             overflow: hidden;
         }
 
         .chat-header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: #764ba2;
             color: white;
-            padding: 20px;
+            padding: 15px;
             text-align: center;
         }
 
         .messages-container {
             flex: 1;
             overflow-y: auto;
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-            background: #f5f5f5;
+            padding: 15px;
+            background: #f9f9f9;
         }
 
         .message {
+            margin-bottom: 12px;
             display: flex;
-            margin-bottom: 8px;
-            animation: slideIn 0.3s ease-out;
         }
 
         .message.user {
@@ -63,98 +57,49 @@
         }
 
         .message-content {
-            max-width: 75%;
-            padding: 12px 16px;
-            border-radius: 18px;
+            max-width: 80%;
+            padding: 10px 15px;
+            border-radius: 15px;
             font-size: 14px;
-            line-height: 1.4;
         }
 
         .message.user .message-content {
-            background: #667eea;
+            background: #764ba2;
             color: white;
-            border-bottom-right-radius: 4px;
+            border-bottom-right-radius: 2px;
         }
 
         .message.bot .message-content {
-            background: #e9ecef;
+            background: #e4e6eb;
             color: #333;
-            border-bottom-left-radius: 4px;
+            border-bottom-left-radius: 2px;
         }
 
-        /* Typing Indicator CSS */
-        .typing {
-            font-style: italic;
-            font-size: 12px;
-            color: #888;
-            margin-left: 5px;
-            display: none;
-        }
-
-        .dot {
-            animation: blink 1s infinite;
-        }
-
-        @keyframes blink {
-            0% {
-                opacity: 0;
-            }
-
-            50% {
-                opacity: 1;
-            }
-
-            100% {
-                opacity: 0;
-            }
-        }
-
-        @keyframes slideIn {
-            from {
-                opacity: 0;
-                transform: translateY(10px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .input-container {
+        .input-area {
+            padding: 15px;
             display: flex;
-            padding: 16px;
-            gap: 12px;
-            background: white;
+            gap: 10px;
             border-top: 1px solid #eee;
         }
 
-        .input-wrapper {
+        input {
             flex: 1;
-            background: #f5f5f5;
-            border-radius: 24px;
-            padding: 0 16px;
-        }
-
-        .input-wrapper input {
-            border: none;
-            background: transparent;
-            padding: 12px 0;
-            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 20px;
             outline: none;
         }
 
-        .send-btn {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            border: none;
+        button#sendBtn {
             background: #764ba2;
             color: white;
+            border: none;
+            padding: 0 15px;
+            border-radius: 20px;
             cursor: pointer;
         }
 
-        /* Modal */
+        /* Popup Styles */
         .modal-overlay {
             display: none;
             position: fixed;
@@ -162,8 +107,8 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.5);
-            z-index: 1000;
+            background: rgba(0, 0, 0, 0.6);
+            z-index: 9999;
             align-items: center;
             justify-content: center;
         }
@@ -174,44 +119,31 @@
 
         .modal-content {
             background: white;
+            padding: 25px;
             border-radius: 12px;
-            width: 90%;
-            max-width: 400px;
-            overflow: hidden;
-        }
-
-        .modal-header {
-            background: #764ba2;
-            color: white;
-            padding: 15px;
-            display: flex;
-            justify-content: space-between;
-        }
-
-        .modal-body {
-            padding: 20px;
+            width: 320px;
             text-align: center;
         }
 
-        .modal-footer {
-            padding: 15px;
-            display: flex;
-            gap: 10px;
-            border-top: 1px solid #eee;
-        }
-
         .modal-btn {
-            flex: 1;
-            padding: 10px;
+            margin-top: 20px;
+            padding: 10px 20px;
+            background: #764ba2;
+            color: white;
+            border: none;
             border-radius: 5px;
             cursor: pointer;
-            border: none;
+            width: 100%;
             font-weight: bold;
         }
 
-        .btn-primary {
-            background: #667eea;
-            color: white;
+        /* Typing Effect CSS */
+        .typing {
+            font-size: 12px;
+            color: #888;
+            margin-bottom: 10px;
+            display: none;
+            padding-left: 15px;
         }
     </style>
 </head>
@@ -220,124 +152,113 @@
 
     <div class="chat-container">
         <div class="chat-header">
-            <h1>Physio Chat Bot</h1>
-            <p>AI Assistant</p>
+            <h3>Physio Assistant</h3>
         </div>
-        <div class="messages-container" id="messagesContainer">
-            <div class="welcome-message" style="text-align: center; color: #999; padding: 20px;">
-                Start a conversation...
-            </div>
-        </div>
-        <div id="typingIndicator" class="typing" style="padding: 0 20px 10px 20px;">AI is typing<span
-                class="dot">.</span><span class="dot" style="animation-delay:0.2s">.</span><span class="dot"
-                style="animation-delay:0.4s">.</span></div>
-
-        <div class="input-container">
-            <div class="input-wrapper">
-                <input type="text" id="messageInput" placeholder="Type a message..." autocomplete="off">
-            </div>
-            <button class="send-btn" id="sendBtn">➤</button>
+        <div class="messages-container" id="chatBox"></div>
+        <div id="typing" class="typing">AI is typing...</div>
+        <div class="input-area">
+            <input type="text" id="userInput" placeholder="Type here...">
+            <button id="sendBtn">Send</button>
         </div>
     </div>
 
-    <div class="modal-overlay" id="questionModal">
+    <div class="modal-overlay" id="examPopup">
         <div class="modal-content">
-            <div class="modal-header">
-                <h2>📝 Question Ready</h2>
-            </div>
-            <div class="modal-body">
-                <p id="modalMessage">Your question is ready!</p>
-            </div>
-            <div class="modal-footer">
-                <button class="modal-btn" style="background:#eee" onclick="hideQuestionModal()">Later</button>
-                <button class="modal-btn btn-primary"
-                    onclick="window.open('./exam.html', '_blank'); hideQuestionModal();">Go to Test</button>
-            </div>
+            <h2 style="color: #764ba2;">📝 Question Ready!</h2>
+            <p id="popupText" style="margin: 15px 0; color: #555;">Your assessment is ready to start.</p>
+            <button class="modal-btn" onclick="goToExam()">Go to Exam</button>
         </div>
     </div>
 
     <script>
-        const messageInput = document.getElementById('messageInput');
+        const chatBox = document.getElementById('chatBox');
+        const userInput = document.getElementById('userInput');
         const sendBtn = document.getElementById('sendBtn');
-        const messagesContainer = document.getElementById('messagesContainer');
-        const typingIndicator = document.getElementById('typingIndicator');
-        const WEBHOOK_URL = 'https://n8n2.srv980217.hstgr.cloud/webhook-test/physio_chatbot';
+        const typing = document.getElementById('typing');
 
-        // Pusher Configuration
-        const pusher = new Pusher('YOUR_APP_KEY', { cluster: 'YOUR_CLUSTER' });
-        const channel = pusher.subscribe('physio-channel');
-        channel.bind('trigger-popup', (data) => {
-            document.getElementById('modalMessage').textContent = data.message || 'Question is ready!';
-            document.getElementById('questionModal').classList.add('show');
-        });
+        // n8n URLs (আপনার n8n Webhook URL এখানে বসান)
+        const CHAT_WEBHOOK = 'https://your-n8n.cloud/webhook/chat';
+        const TRIGGER_CHECK_URL = 'https://your-n8n.cloud/webhook/trigger-question';
 
-        function hideQuestionModal() { document.getElementById('questionModal').classList.remove('show'); }
+        // ১. মেসেজ পাঠানোর ফাংশন (টাইপিং ইফেক্ট সহ)
+        async function sendMessage() {
+            const text = userInput.value.trim();
+            if (!text) return;
 
-        // Typing Effect Function
-        function typeWriter(text, element, speed = 30) {
+            addMessage(text, 'user');
+            userInput.value = '';
+            typing.style.display = 'block';
+
+            try {
+                const res = await fetch(CHAT_WEBHOOK, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message: text })
+                });
+                const data = await res.json();
+                typing.style.display = 'none';
+                typeWriter(data.output || data.message, 'bot');
+            } catch (e) {
+                typing.style.display = 'none';
+                addMessage("Error connecting to server.", 'bot');
+            }
+        }
+
+        function addMessage(text, sender) {
+            const div = document.createElement('div');
+            div.className = `message ${sender}`;
+            div.innerHTML = `<div class="message-content">${text}</div>`;
+            chatBox.appendChild(div);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        function typeWriter(text, sender) {
+            const div = document.createElement('div');
+            div.className = `message ${sender}`;
+            const content = document.createElement('div');
+            content.className = 'message-content';
+            div.appendChild(content);
+            chatBox.appendChild(div);
+
             let i = 0;
             function type() {
                 if (i < text.length) {
-                    element.innerHTML += text.charAt(i);
+                    content.innerHTML += text.charAt(i);
                     i++;
-                    messagesContainer.scrollTop = messagesContainer.scrollHeight;
-                    setTimeout(type, speed);
+                    chatBox.scrollTop = chatBox.scrollHeight;
+                    setTimeout(type, 30);
                 }
             }
             type();
         }
 
-        async function sendMessage() {
-            const text = messageInput.value.trim();
-            if (!text) return;
-
-            // User Message
-            addMessage(text, true);
-            messageInput.value = '';
-
-            // Show Typing Indicator
-            typingIndicator.style.display = 'block';
-            messagesContainer.scrollTop = messagesContainer.scrollHeight;
-
+        // ২. পপআপ চেক করার ফাংশন (Polling)
+        async function checkTrigger() {
             try {
-                const response = await fetch(WEBHOOK_URL, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ message: text })
-                });
-                const data = await response.json();
-
-                typingIndicator.style.display = 'none';
-                const botMsg = data.output || data.message || "Done!";
-                addMessage(botMsg, false, true); // true means use typing effect
-            } catch (e) {
-                typingIndicator.style.display = 'none';
-                addMessage("Error connecting to server.", false);
-            }
+                const res = await fetch(TRIGGER_CHECK_URL);
+                if (res.status === 200) {
+                    const data = await res.json();
+                    if (data && data.question) {
+                        // ডাটা সেভ করা যাতে exam.html পায়
+                        localStorage.setItem('current_exam_data', JSON.stringify(data));
+                        // পপআপ দেখানো
+                        document.getElementById('popupText').innerText = `Topic: ${data.topic}`;
+                        document.getElementById('examPopup').classList.add('show');
+                    }
+                }
+            } catch (e) { /* silent check */ }
         }
 
-        function addMessage(text, isUser, useTyping = false) {
-            if (document.querySelector('.welcome-message')) document.querySelector('.welcome-message').remove();
+        // প্রতি ৫ সেকেন্ড পর পর n8n কে জিজ্ঞেস করবে "নতুন প্রশ্ন আছে কি না"
+        setInterval(checkTrigger, 5000);
 
-            const div = document.createElement('div');
-            div.className = `message ${isUser ? 'user' : 'bot'}`;
-            const content = document.createElement('div');
-            content.className = 'message-content';
-
-            div.appendChild(content);
-            messagesContainer.appendChild(div);
-
-            if (useTyping) {
-                typeWriter(text, content);
-            } else {
-                content.textContent = text;
-            }
-
-            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        function goToExam() {
+            window.open('exam.html', '_blank');
+            document.getElementById('examPopup').classList.remove('show');
         }
 
-        sendBtn.addEventListener('click', sendMessage);
-        messageInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') sendMessage(); });
+        sendBtn.onclick = sendMessage;
+        userInput.onkeypress = (e) => { if (e.key === 'Enter') sendMessage(); };
     </script>
 </body>
 

@@ -3,14 +3,21 @@
 
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Physio Exam</title>
     <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
         body {
-            font-family: sans-serif;
+            font-family: 'Segoe UI', sans-serif;
             background: #f4f7f6;
-            padding: 20px;
             display: flex;
             justify-content: center;
+            padding: 20px;
         }
 
         .exam-container {
@@ -41,103 +48,145 @@
             background: #f9f9f9;
             padding: 15px;
             border-radius: 8px;
-            border-left: 5px solid #667eea;
+            border-left: 5px solid #764ba2;
             margin-bottom: 20px;
-            font-style: italic;
+            line-height: 1.6;
+            color: #444;
         }
 
         .question-text {
             font-size: 18px;
             font-weight: bold;
-            margin-bottom: 15px;
+            margin-bottom: 20px;
+            color: #333;
         }
 
         .options-container {
             display: flex;
             flex-direction: column;
-            gap: 10px;
+            gap: 12px;
         }
 
         .option-btn {
-            padding: 12px;
+            padding: 15px;
             border: 1px solid #ddd;
-            border-radius: 6px;
+            border-radius: 8px;
             cursor: pointer;
             text-align: left;
             background: white;
+            font-size: 15px;
             transition: 0.2s;
         }
 
         .option-btn:hover {
             background: #f0f2ff;
-            border-color: #667eea;
+            border-color: #764ba2;
+        }
+
+        .option-btn.selected {
+            background: #764ba2;
+            color: white;
+            border-color: #764ba2;
+        }
+
+        .submit-area {
+            margin-top: 30px;
+            text-align: center;
+        }
+
+        .submit-btn {
+            background: #27ae60;
+            color: white;
+            border: none;
+            padding: 12px 40px;
+            border-radius: 25px;
+            font-size: 16px;
+            cursor: pointer;
         }
     </style>
 </head>
 
 <body>
+
     <div class="exam-container">
         <div class="header">
-            <h2 id="exam-topic">Topic Name</h2>
-            <div class="timer">Time Left: <span id="time-counter">00:00</span></div>
+            <h2 id="topic">Topic</h2>
+            <div class="timer">Time Left: <span id="counter">00:00</span></div>
         </div>
 
-        <div class="passage-box" id="exam-passage">Loading passage...</div>
+        <div class="passage-box" id="passage">Loading passage...</div>
+        <div class="question-text" id="question">Loading question...</div>
 
-        <div class="question-text" id="exam-question">Loading question...</div>
+        <div class="options-container" id="options"></div>
 
-        <div class="options-container" id="options-list">
+        <div class="submit-area">
+            <button class="submit-btn" onclick="submitExam()">Submit Answer</button>
         </div>
     </div>
 
     <script>
+        let selectedOption = null;
+
         window.onload = function () {
             const rawData = localStorage.getItem('current_exam_data');
             if (!rawData) {
-                alert("No question found!");
+                document.body.innerHTML = "<h1>No Exam Data Found!</h1>";
                 return;
             }
 
             const data = JSON.parse(rawData);
 
-            // ১. ডেটা সেট করা
-            document.getElementById('exam-topic').textContent = data.topic;
-            document.getElementById('exam-passage').textContent = data.passage;
-            document.getElementById('exam-question').textContent = data.question;
+            // Set Data
+            document.getElementById('topic').textContent = data.topic;
+            document.getElementById('passage').textContent = data.passage;
+            document.getElementById('question').textContent = data.question;
 
-            // ২. অপশনগুলো তৈরি করা
-            const optionsList = document.getElementById('options-list');
+            // Render Options
+            const optionsDiv = document.getElementById('options');
             data.options.forEach((opt, index) => {
                 const btn = document.createElement('button');
                 btn.className = 'option-btn';
                 btn.textContent = opt;
-                btn.onclick = () => checkAnswer(index, data.correctAnswer);
-                optionsList.appendChild(btn);
+                btn.onclick = function () {
+                    document.querySelectorAll('.option-btn').forEach(b => b.classList.remove('selected'));
+                    btn.classList.add('selected');
+                    selectedOption = index;
+                };
+                optionsDiv.appendChild(btn);
             });
 
-            // ৩. টাইমার শুরু (counter)
+            // Timer
             let timeLeft = data.timeLimit || 600;
-            const timerDisplay = document.getElementById('time-counter');
+            const counterSpan = document.getElementById('counter');
 
-            const timerInterval = setInterval(() => {
-                const mins = Math.floor(timeLeft / 60);
-                const secs = timeLeft % 60;
-                timerDisplay.textContent = `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+            const timer = setInterval(() => {
+                const m = Math.floor(timeLeft / 60);
+                const s = timeLeft % 60;
+                counterSpan.textContent = `${m}:${s < 10 ? '0' : ''}${s}`;
 
                 if (timeLeft <= 0) {
-                    clearInterval(timerInterval);
+                    clearInterval(timer);
                     alert("Time is up!");
+                    submitExam();
                 }
                 timeLeft--;
             }, 1000);
         };
 
-        function checkAnswer(selected, correct) {
-            if (selected === correct) {
-                alert("Correct Answer!");
-            } else {
-                alert("Wrong Answer!");
+        function submitExam() {
+            const rawData = JSON.parse(localStorage.getItem('current_exam_data'));
+            if (selectedOption === null) {
+                alert("Please select an option first!");
+                return;
             }
+
+            if (selectedOption === rawData.correctAnswer) {
+                alert("Correct Answer! Well done.");
+            } else {
+                alert("Wrong Answer! The correct one was: " + rawData.options[rawData.correctAnswer]);
+            }
+
+            window.close();
         }
     </script>
 </body>
