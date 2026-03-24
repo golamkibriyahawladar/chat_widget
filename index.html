@@ -233,11 +233,14 @@
                     body: JSON.stringify({ message: text })
                 });
 
-                const data = await res.json();
+                if (!res.ok) {
+                    throw new Error(`HTTP error: ${res.status}`);
+                }
+
+                const reply = await res.text();
                 typing.style.display = 'none';
 
-                const reply = data.output || data.message || 'No response from server.';
-                typeWriter(reply, 'bot');
+                typeWriter(reply || 'No response from server.', 'bot');
 
             } catch (e) {
                 typing.style.display = 'none';
@@ -252,7 +255,6 @@
                 const data = await res.json();
 
                 if (!data.hasNew) return;
-
                 if (String(data.id) === String(lastQuestionId)) return;
 
                 const examData = {
